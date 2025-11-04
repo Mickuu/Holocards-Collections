@@ -1,0 +1,270 @@
+/* ————————————————————————————————
+   🌈 BASE GÉNÉRALE
+———————————————————————————————— */
+:root {
+  color-scheme: light dark;
+  --bg-gradient: linear-gradient(135deg, #e6f0fa 0%, #f9fcff 100%);
+  --card-bg: #fff;
+  --card-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  --accent: #4e6cf2;
+  --accent-dark: #2f4cd8;
+  --text-main: #222;
+  --text-light: #666;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-main);
+  min-height: 100vh;
+  padding-bottom: 50px;
+}
+
+/* ————————————————————————————————
+   🧭 BARRE DE NAVIGATION
+———————————————————————————————— */
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 10px 18px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 10px;
+  z-index: 10;
+}
+
+nav a {
+  text-decoration: none;
+  color: var(--text-main);
+  font-weight: 500;
+  transition: color 0.2s, transform 0.1s;
+}
+
+nav a:hover {
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+nav button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+nav button:hover {
+  background: var(--accent-dark);
+}
+
+/* ————————————————————————————————
+   🧱 STRUCTURE GÉNÉRALE
+———————————————————————————————— */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  gap: 20px;
+}
+
+h1, h2 {
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ————————————————————————————————
+   🎴 CARTES
+———————————————————————————————— */
+.grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.list-view {
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  display: block;
+}
+
+.card-content {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.card-content strong {
+  font-weight: 600;
+}
+
+.card-content span {
+  color: var(--text-light);
+}
+
+.list-view .card {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.list-view .card img {
+  width: 100px;
+  margin-right: 16px;
+}
+
+/* ————————————————————————————————
+   🔘 BOUTONS
+———————————————————————————————— */
+button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  font-size: 13px;
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-dark);
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ————————————————————————————————
+   🔎 CHAMPS / FILTRES
+———————————————————————————————— */
+input, select {
+  font-family: inherit;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(78,108,242,0.2);
+}
+
+/* ————————————————————————————————
+   💬 LISTE DES JOUEURS
+———————————————————————————————— */
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+ul li {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+ul li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+ul li a {
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+ul li a:hover {
+  text-decoration: underline;
+}
+
+/* ————————————————————————————————
+   🌗 MODE SOMBRE
+———————————————————————————————— */
+html[data-theme='dark'] {
+  --bg-gradient: linear-gradient(135deg, #1e1e2f 0%, #2b2b3f 100%);
+  --card-bg: #2d2d3f;
+  --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  --accent: #9ba8ff;
+  --accent-dark: #7d89e8;
+  --text-main: #f2f2f2;
+  --text-light: #bbb;
+}
+
+/* ————————————————————————————————
+   🌙 TRANSITION ET APPARITION
+———————————————————————————————— */
+html, body, nav, .card, ul li, main {
+  transition:
+    background 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* Fade-in doux au chargement */
+html {
+  opacity: 0;
+  background: var(--bg-gradient);
+}
+
+html.theme-loaded {
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+/* ————————————————————————————————
+   📱 RESPONSIVE
+———————————————————————————————— */
+@media (max-width: 700px) {
+  .grid-view {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  nav {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
