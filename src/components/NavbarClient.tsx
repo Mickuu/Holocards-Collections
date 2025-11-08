@@ -6,7 +6,9 @@ import Navbar from "./Navbar";
 import type { User } from "@supabase/supabase-js";
 
 export default function NavbarClient() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [user, setUser] = useState<User | null>(null);
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
@@ -16,6 +18,5 @@ export default function NavbarClient() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // ⬇️ Ne plus passer de prop inexistante
   return <Navbar />;
 }
