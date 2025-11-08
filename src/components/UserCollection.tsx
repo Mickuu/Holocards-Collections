@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
 type Row = {
@@ -13,13 +13,20 @@ type Row = {
   user_display_name: string
 }
 
-export default function UserCollection({ userId, editable = true }: { userId: string; editable?: boolean }) {
+export default function UserCollection({
+  userId,
+  editable = true,
+}: {
+  userId: string
+  editable?: boolean
+}) {
   const [rows, setRows] = useState<Row[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<number | null>(null)
 
-  const fetchData = async () => {
+  // ⚙️ fetchData mémoïsé -> plus de warning react-hooks/exhaustive-deps
+  const fetchData = useCallback(async () => {
     const { data, error } = await supabase
       .from('v_user_collection_detailed')
       .select('*')
@@ -30,11 +37,11 @@ export default function UserCollection({ userId, editable = true }: { userId: st
     if (error) setError(error.message)
     else setRows(data as Row[])
     setLoading(false)
-  }
+  }, [userId])
 
   useEffect(() => {
     fetchData()
-  }, [userId])
+  }, [fetchData])
 
   const changeQty = async (cardId: number, delta: number) => {
     try {
@@ -60,13 +67,15 @@ export default function UserCollection({ userId, editable = true }: { userId: st
   return (
     <section>
       <h2>Collection de {rows[0]?.user_display_name || 'Utilisateur'}</h2>
+
+      {/* 🧱 La grid s’appuie sur .grid-view défini dans globals.css */}
       <div className="grid-view">
         {rows.map((r) => (
           <article key={r.card_id} className="card" style={{ position: 'relative' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {r.image_url && <img src={r.image_url} alt={r.card_name} />}
 
-            {/* Badge quantité si >1 */}
+            {/* Badge quantité si > 1 */}
             {r.quantity > 1 && (
               <span
                 style={{
@@ -76,9 +85,10 @@ export default function UserCollection({ userId, editable = true }: { userId: st
                   background: '#4e6cf2',
                   color: 'white',
                   padding: '2px 6px',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: 'bold'
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                 }}
               >
                 ×{r.quantity}
@@ -89,7 +99,7 @@ export default function UserCollection({ userId, editable = true }: { userId: st
               <strong>[{r.set_code}] {r.collector_no}</strong>
               <span>{r.card_name}</span>
 
-              {/* Boutons +/- uniquement si c’est la collection de l’utilisateur connecté */}
+              {/* Boutons +/- uniquement si c’est la collection éditable */}
               {editable && (
                 <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                   <button

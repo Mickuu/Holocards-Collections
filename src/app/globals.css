@@ -76,11 +76,15 @@ main {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.page-grid {
   display: grid;
   gap: 20px;
 }
 
-h1, h2 {
+h1,
+h2 {
   font-weight: 600;
   margin: 0;
 }
@@ -174,7 +178,8 @@ button:disabled {
 /* ————————————————————————————————
    🔎 CHAMPS / FILTRES
 ———————————————————————————————— */
-input, select {
+input,
+select {
   font-family: inherit;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -184,9 +189,10 @@ input, select {
   transition: border 0.2s, box-shadow 0.2s;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(78,108,242,0.2);
+  box-shadow: 0 0 0 2px rgba(78, 108, 242, 0.2);
 }
 
 /* ————————————————————————————————
@@ -202,13 +208,13 @@ ul li {
   background: rgba(255, 255, 255, 0.9);
   border-radius: 10px;
   padding: 10px 14px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 ul li:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 ul li a {
@@ -237,7 +243,12 @@ html[data-theme='dark'] {
 /* ————————————————————————————————
    🌙 TRANSITION ET APPARITION
 ———————————————————————————————— */
-html, body, nav, .card, ul li, main {
+html,
+body,
+nav,
+.card,
+ul li,
+main {
   transition:
     background 0.3s ease,
     color 0.3s ease,

@@ -1,37 +1,45 @@
 'use client'
 import { useEffect, useState } from 'react'
 
-export default function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    // Valeur par défaut côté serveur (évite le mismatch SSR)
-    if (typeof window === 'undefined') return 'light'
+function getInitialTheme(): 'light' | 'dark' {
+  // Appelé uniquement côté client (Navbar est ssr:false)
+  try {
     const stored = localStorage.getItem('theme')
+    if (stored === 'light' || stored === 'dark') return stored
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    return stored === 'dark' || (!stored && prefersDark) ? 'dark' : 'light'
-  })
+    return prefersDark ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
 
-  // Met à jour le DOM après le premier rendu
+export default function ThemeToggle() {
+  // ✅ pas de setState dans l'effet
+  const [theme, setTheme] = useState<'light' | 'dark'>(getInitialTheme)
+
+  // Synchronise le DOM quand `theme` change
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     document.documentElement.classList.add('theme-loaded')
-    localStorage.setItem('theme', theme)
+    try {
+      localStorage.setItem('theme', theme)
+    } catch {}
   }, [theme])
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
-  }
+  const toggle = () => setTheme(t => (t === 'light' ? 'dark' : 'light'))
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={toggle}
       title="Changer de thème"
       style={{
         background: 'none',
         border: 'none',
-        fontSize: '20px',
+        fontSize: 20,
         cursor: 'pointer',
-        color: theme === 'light' ? '#333' : '#f9f9f9'
+        color: theme === 'light' ? '#333' : '#f9f9f9',
       }}
+      aria-label={theme === 'light' ? 'Passer en mode sombre' : 'Passer en mode clair'}
     >
       {theme === 'light' ? '🌙' : '☀️'}
     </button>

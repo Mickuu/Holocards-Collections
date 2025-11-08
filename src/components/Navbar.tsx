@@ -1,58 +1,110 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import ThemeToggle from "@/components/ThemeToggle";
 
-export default function Navbar({
-  user,
-}: {
-  user?: { user_metadata?: { name?: string; user_name?: string } };
-}) {
-  const pathname = usePathname();
+export default function Navbar() {
+  const [me, setMe] = useState<null | { id: string; label: string }>(null);
 
-  const navItems = [
-    { href: "/", label: "🏠 Accueil" },
-    { href: "/collection", label: "🃏 Ma collection" },
-    { href: "/collections", label: "📚 Collections des joueurs" },
-  ];
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setMe(
+        user
+          ? {
+              id: user.id,
+              label:
+                user.user_metadata?.full_name ||
+                user.user_metadata?.user_name ||
+                user.email ||
+                user.id,
+            }
+          : null
+      );
+    };
+    init();
 
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      const u = session?.user;
+      setMe(
+        u
+          ? {
+              id: u.id,
+              label:
+                u.user_metadata?.full_name ||
+                u.user_metadata?.user_name ||
+                u.email ||
+                u.id,
+            }
+          : null
+      );
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setMe(null);
+  };
+
+  // 👉 mêmes styles que ta barre de l'accueil (inline CSS)
   return (
-    <header className="w-full bg-white/10 backdrop-blur-md border-b border-white/20">
-      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-        {/* Liens principaux */}
-        <div className="flex gap-6">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`transition-all ${
-                pathname === item.href
-                  ? "text-blue-400 font-semibold"
-                  : "text-white hover:text-blue-400"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
+    <nav
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        background: "var(--card-bg)",
+        backdropFilter: "blur(10px)",
+        borderRadius: 10,
+        padding: "10px 16px",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+        margin: "16px auto",
+        maxWidth: 1200,
+      }}
+    >
+      <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+        <Link
+          href="/"
+          style={{
+            fontWeight: "bold",
+            textDecoration: "none",
+            color: "var(--text-main)",
+          }}
+        >
+          🏠 Accueil
+        </Link>
 
-        {/* Profil et bouton */}
-        <div className="flex items-center gap-3">
-          {user && (
-            <span className="text-white text-sm">
-              🌙 {user.user_metadata?.user_name ?? user.user_metadata?.name ?? "Utilisateur"}
-            </span>
-          )}
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm transition-all"
+        {me && (
+          <>
+            <Link
+              href={`/user/${encodeURIComponent(me.id)}`} // ✅ lien correct vers la collection de l'user
+              style={{ textDecoration: "none", color: "var(--text-main)" }}
             >
-              Déconnexion
-            </button>
-          </form>
-        </div>
-      </nav>
-    </header>
+              💼 Ma collection
+            </Link>
+
+            <Link
+              href="/collections"
+              style={{ textDecoration: "none", color: "var(--text-main)" }}
+            >
+              🃏 Collections des joueurs
+            </Link>
+          </>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <ThemeToggle />
+        {me && (
+          <>
+            <span style={{ fontWeight: "bold" }}>{me.label}</span>
+            <button onClick={logout}>Déconnexion</button>
+          </>
+        )}
+      </div>
+    </nav>
   );
 }
