@@ -4,11 +4,12 @@ import { supabase } from '@/lib/supabaseClient'
 
 type Card = {
   id: number
-  code: string
+  set_name: string
+  collector_no: string
   name: string
-  rarity: string
-  color: string
-  support_type: string | null
+  rarity_code: string | null
+  colors: string | null
+  is_support: boolean | null
   image_url: string | null
 }
 
@@ -23,21 +24,45 @@ export default function CatalogGrid() {
   const [me, setMe] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const [sets, setSets] = useState<string[]>([])
+  const [selectedSet, setSelectedSet] = useState<string | null>(null)
+
   // Chargement user + cartes + collection
   useEffect(() => {
     const loadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
       setMe(user.id)
 
-      const { data: cardsData } = await supabase.from('cards').select('*')
+      // 🔹 On récupère les colonnes dont on a besoin, avec set_name
+      const { data: cardsData } = await supabase
+        .from('cards')
+        .select(
+          'id, set_name, collector_no, name, rarity_code, colors, image_url, is_support'
+        )
+
       const { data: ownedData } = await supabase
         .from('user_cards')
         .select('card_id, quantity')
         .eq('user_id', user.id)
 
-      setCards(cardsData || [])
-      setUserCards(ownedData || [])
+      const allCards = (cardsData || []) as Card[]
+      setCards(allCards)
+      setUserCards((ownedData || []) as UserCard[])
+
+      // 🔹 Liste des sets distincts
+      const uniqueSets = Array.from(
+        new Set(allCards.map((c) => c.set_name).filter(Boolean))
+      ).sort()
+      setSets(uniqueSets)
+      // Si aucun set sélectionné, on prend le premier
+      setSelectedSet((prev) => prev ?? (uniqueSets[0] ?? null))
+
       setLoading(false)
     }
     loadData()
@@ -56,7 +81,10 @@ export default function CatalogGrid() {
     if (!error) {
       setUserCards((prev) => {
         const existing = prev.find((uc) => uc.card_id === cardId)
-        if (existing) return prev.map((uc) => uc.card_id === cardId ? { ...uc, quantity: uc.quantity + 1 } : uc)
+        if (existing)
+          return prev.map((uc) =>
+            uc.card_id === cardId ? { ...uc, quantity: uc.quantity + 1 } : uc
+          )
         return [...prev, { card_id: cardId, quantity: 1 }]
       })
     }
@@ -70,9 +98,14 @@ export default function CatalogGrid() {
     const newQty = current - 1
 
     if (newQty === 0) {
-      await supabase.from('user_cards').delete().eq('user_id', me).eq('card_id', cardId)
+      await supabase
+        .from('user_cards')
+        .delete()
+        .eq('user_id', me)
+        .eq('card_id', cardId)
     } else {
-      await supabase.from('user_cards')
+      await supabase
+        .from('user_cards')
         .update({ quantity: newQty })
         .eq('user_id', me)
         .eq('card_id', cardId)
@@ -80,7 +113,9 @@ export default function CatalogGrid() {
 
     setUserCards((prev) =>
       prev
-        .map((uc) => (uc.card_id === cardId ? { ...uc, quantity: newQty } : uc))
+        .map((uc) =>
+          uc.card_id === cardId ? { ...uc, quantity: newQty } : uc
+        )
         .filter((uc) => uc.quantity > 0)
     )
   }
@@ -88,11 +123,41 @@ export default function CatalogGrid() {
   if (loading) return <p>Chargement du catalogue...</p>
   if (!me) return <p style={{ opacity: 0.7 }}>Connecte-toi pour gérer ta collection.</p>
 
+  // 🃏 Cartes filtrées par set sélectionné
+  const visibleCards = selectedSet
+    ? cards.filter((c) => c.set_name === selectedSet)
+    : cards
+
   return (
     <section>
-      <h2>Catalogue</h2>
+      {/* Titre = nom du set + select pour changer de set */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
+        <h2 style={{ margin: 0 }}>{selectedSet || 'Catalogue'}</h2>
+
+        {sets.length > 0 && (
+          <select
+            value={selectedSet ?? ''}
+            onChange={(e) => setSelectedSet(e.target.value || null)}
+          >
+            {sets.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
       <div className="grid-view">
-        {cards.map((card) => {
+        {visibleCards.map((card) => {
           const qty = getQuantity(card.id)
           const isOwned = qty > 0
 
@@ -137,9 +202,14 @@ export default function CatalogGrid() {
               )}
 
               <div className="card-content">
-                <strong>{card.code}</strong>
+                <strong>
+                  [{card.set_name}] {card.collector_no}
+                </strong>
                 <span>{card.name}</span>
-                <span>Rareté : {card.rarity}{card.color ? ` | ${card.color}` : ''}</span>
+                <span>
+                  Rareté : {card.rarity_code}
+                  {card.colors ? ` | ${card.colors}` : ''}
+                </span>
               </div>
 
               {/* Boutons + / − */}

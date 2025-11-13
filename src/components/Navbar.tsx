@@ -3,44 +3,52 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 import ThemeToggle from "@/components/ThemeToggle";
 
+// "micku_san" → "Micku San"
+function capitalizeWords(str: string) {
+  return str
+    .replace(/_/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+type Me = { id: string; label: string };
+
 export default function Navbar() {
-  const [me, setMe] = useState<null | { id: string; label: string }>(null);
+  const [me, setMe] = useState<Me | null>(null);
 
   useEffect(() => {
+    const buildLabel = (user: User | null): Me | null => {
+      if (!user) return null;
+
+      const raw =
+        user.user_metadata?.full_name ||
+        user.user_metadata?.user_name ||
+        user.email ||
+        user.id;
+
+      return {
+        id: user.id,
+        label: capitalizeWords(String(raw)),
+      };
+    };
+
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setMe(
-        user
-          ? {
-              id: user.id,
-              label:
-                user.user_metadata?.full_name ||
-                user.user_metadata?.user_name ||
-                user.email ||
-                user.id,
-            }
-          : null
-      );
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setMe(buildLabel(user));
     };
     init();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-      const u = session?.user;
-      setMe(
-        u
-          ? {
-              id: u.id,
-              label:
-                u.user_metadata?.full_name ||
-                u.user_metadata?.user_name ||
-                u.email ||
-                u.id,
-            }
-          : null
-      );
+      setMe(buildLabel(session?.user ?? null));
     });
+
     return () => sub.subscription.unsubscribe();
   }, []);
 
@@ -49,7 +57,6 @@ export default function Navbar() {
     setMe(null);
   };
 
-  // 👉 mêmes styles que ta barre de l'accueil (inline CSS)
   return (
     <nav
       style={{
@@ -80,7 +87,7 @@ export default function Navbar() {
         {me && (
           <>
             <Link
-              href={`/user/${encodeURIComponent(me.id)}`} // ✅ lien correct vers la collection de l'user
+              href={`/user/${encodeURIComponent(me.id)}`}
               style={{ textDecoration: "none", color: "var(--text-main)" }}
             >
               💼 Ma collection
@@ -91,6 +98,14 @@ export default function Navbar() {
               style={{ textDecoration: "none", color: "var(--text-main)" }}
             >
               🃏 Collections des joueurs
+            </Link>
+
+            {/* 🔁 Nouvelle page des échanges */}
+            <Link
+              href="/trades"
+              style={{ textDecoration: "none", color: "var(--text-main)" }}
+            >
+              🔁 Échanges
             </Link>
           </>
         )}

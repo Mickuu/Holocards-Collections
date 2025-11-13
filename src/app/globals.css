@@ -279,3 +279,275 @@ html.theme-loaded {
     gap: 10px;
   }
 }
+
+.trade-item {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: var(--text-main);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  backdrop-filter: blur(4px);
+}
+
+/* ————————————————————————————————
+   ⚔️ Bloc d'échanges RPG (clair + sombre)
+———————————————————————————————— */
+
+/* 🌞 Style de base = clair, façon interface de RPG moderne */
+.trade-panel {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(103, 132, 255, 0.20), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(120, 220, 255, 0.16), transparent 55%),
+    var(--card-bg);
+  border: 1px solid rgba(78, 108, 242, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.7),
+    0 12px 30px rgba(15, 23, 42, 0.25);
+  font-size: 14px;
+}
+
+/* petite bordure “HUD” intérieure */
+.trade-panel::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+/* léger “scanline” très discret */
+.trade-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.04) 0,
+    transparent 2px
+  );
+  background-size: 100% 4px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.trade-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+
+.trade-title {
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--accent-dark);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trade-title::before {
+  content: "◆";
+  font-size: 9px;
+  transform: translateY(-1px);
+}
+
+.trade-subtitle {
+  opacity: 0.85;
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.trade-empty {
+  margin: 4px 0 0;
+  opacity: 0.75;
+  font-style: italic;
+}
+
+.trade-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.trade-side {
+  display: grid;
+  gap: 8px;
+}
+
+.trade-side-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ————————————————————————————————
+   💠 Badges / chips (si utilisés)
+———————————————————————————————— */
+
+.trade-chip-list {
+  display: grid;
+  gap: 6px;
+}
+
+.trade-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.12), rgba(15, 23, 42, 0.85));
+  box-shadow:
+    0 3px 8px rgba(15, 23, 42, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.trade-chip-code {
+  font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #d7e0ff;
+}
+
+.trade-chip-name {
+  font-size: 13px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Responsive : pile les colonnes sur mobile */
+@media (max-width: 700px) {
+  .trade-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ————————————————————————————————
+   🃏 Mini-cartes échangeables RPG
+———————————————————————————————— */
+
+.trade-card-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+/* carte style “booster” */
+.trade-card {
+  position: relative;
+  width: 78px;
+  height: 110px;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease-out,
+    box-shadow 0.2s ease-out,
+    filter 0.2s ease-out;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 6px 14px rgba(15, 23, 42, 0.8);
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.18), rgba(15, 23, 42, 0.95));
+}
+
+.trade-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 9px;
+  border: 1px solid rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.trade-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow:
+    0 0 10px rgba(120, 200, 255, 0.9),
+    0 8px 18px rgba(15, 23, 42, 0.9);
+}
+
+.trade-card.selected {
+  box-shadow:
+    0 0 10px rgba(72, 230, 140, 0.95),
+    0 0 0 2px rgba(72, 230, 140, 1),
+    0 10px 22px rgba(0, 0, 0, 0.8);
+  filter: saturate(1.1);
+}
+
+.trade-card.requested {
+  box-shadow: 0 0 8px rgba(80, 160, 255, 0.8),
+              0 0 0 2px rgba(80, 160, 255, 1),
+              0 6px 16px rgba(0,0,0,0.7);
+}
+
+.trade-card-check--request {
+  background: rgba(80, 160, 255, 0.9);
+}
+
+.trade-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* check de sélection façon jeton */
+.trade-card-check {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: rgba(20, 255, 120, 0.95);
+  color: #020617;
+  font-weight: 900;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid #000;
+  box-shadow:
+    0 0 6px rgba(20, 255, 120, 0.9),
+    0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* ————————————————————————————————
+   🌚 Variantes mode sombre
+———————————————————————————————— */
+
+html[data-theme='dark'] .trade-panel {
+  background:
+    radial-gradient(circle at top left, rgba(155, 168, 255, 0.35), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(119, 200, 255, 0.25), transparent 55%),
+    rgba(10, 10, 30, 0.94);
+  border: 1px solid rgba(155, 168, 255, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 16px 34px rgba(0, 0, 0, 0.9);
+}
+
+html[data-theme='dark'] .trade-title {
+  color: #f4f4ff;
+}
+
+html[data-theme='dark'] .trade-subtitle {
+  color: #d9e0ff;
+}
+
+html[data-theme='dark'] .trade-side-title {
+  color: #fdfdff;
+}
+

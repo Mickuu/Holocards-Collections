@@ -11,7 +11,6 @@ export default function UserPage() {
 
   useEffect(() => {
     const checkUser = async () => {
-      // Vérifie que l'user existe
       const { data, error } = await supabase
         .from('users')
         .select('id')
@@ -26,6 +25,7 @@ export default function UserPage() {
       }
       setLoading(false)
     }
+
     checkUser()
   }, [params.id])
 
@@ -34,7 +34,7 @@ export default function UserPage() {
 
   return (
     <main style={{ padding: 16 }}>
-      <h1>Collection d’un utilisateur</h1>
+      {/* Le titre est maintenant géré par UserCollection */}
       <UserCollection userId={params.id} editable={false} />
     </main>
   )

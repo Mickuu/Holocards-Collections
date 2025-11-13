@@ -13,6 +13,15 @@ type Row = {
   user_display_name: string
 }
 
+function capitalizeWords(str: string) {
+  return str
+    .replace(/_/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export default function UserCollection({
   userId,
   editable = true,
@@ -25,7 +34,6 @@ export default function UserCollection({
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<number | null>(null)
 
-  // ⚙️ fetchData mémoïsé -> plus de warning react-hooks/exhaustive-deps
   const fetchData = useCallback(async () => {
     const { data, error } = await supabase
       .from('v_user_collection_detailed')
@@ -64,18 +72,18 @@ export default function UserCollection({
   if (error) return <p style={{ color: 'crimson' }}>Erreur: {error}</p>
   if (!rows || !rows.length) return <p>Collection vide.</p>
 
+  const ownerName = capitalizeWords(rows[0]?.user_display_name || 'Utilisateur')
+
   return (
     <section>
-      <h2>Collection de {rows[0]?.user_display_name || 'Utilisateur'}</h2>
+      <h2>Collection de {ownerName}</h2>
 
-      {/* 🧱 La grid s’appuie sur .grid-view défini dans globals.css */}
       <div className="grid-view">
         {rows.map((r) => (
           <article key={r.card_id} className="card" style={{ position: 'relative' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {r.image_url && <img src={r.image_url} alt={r.card_name} />}
 
-            {/* Badge quantité si > 1 */}
             {r.quantity > 1 && (
               <span
                 style={{
@@ -99,7 +107,6 @@ export default function UserCollection({
               <strong>[{r.set_code}] {r.collector_no}</strong>
               <span>{r.card_name}</span>
 
-              {/* Boutons +/- uniquement si c’est la collection éditable */}
               {editable && (
                 <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                   <button
