@@ -114,6 +114,8 @@ function mapDbSessionRow(r: any): SessionRow {
   };
 }
 
+type TabKey = "received" | "sent" | "sessions" | "history";
+
 export default function TradesPage() {
   const [me, setMe] = useState<string | null>(null);
   const [requestsIn, setRequestsIn] = useState<RequestRow[]>([]);
@@ -121,6 +123,7 @@ export default function TradesPage() {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [history, setHistory] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabKey>("received");
 
   useEffect(() => {
     const load = async () => {
@@ -326,138 +329,63 @@ export default function TradesPage() {
     );
 
   return (
-    <main style={{ padding: 16, display: "grid", gap: 32 }}>
-      <h1>Demandes d’échange</h1>
+    <main style={{ padding: 16, display: "grid", gap: 24 }}>
+      {/* Titre + onglets RPG */}
+      <div style={{ marginBottom: 4 }}>
+        <h1 style={{ marginBottom: 12 }}>Échanges</h1>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            className={`trade-tab ${
+              activeTab === "received" ? "active" : ""
+            }`}
+            onClick={() => setActiveTab("received")}
+          >
+            🔮 Reçues ({requestsIn.length})
+          </button>
+          <button
+            className={`trade-tab ${activeTab === "sent" ? "active" : ""}`}
+            onClick={() => setActiveTab("sent")}
+          >
+            📤 Envoyées ({requestsOut.length})
+          </button>
+          <button
+            className={`trade-tab ${
+              activeTab === "sessions" ? "active" : ""
+            }`}
+            onClick={() => setActiveTab("sessions")}
+          >
+            🔁 En cours ({sessions.length})
+          </button>
+          <button
+            className={`trade-tab ${
+              activeTab === "history" ? "active" : ""
+            }`}
+            onClick={() => setActiveTab("history")}
+          >
+            📜 Historique ({history.length})
+          </button>
+        </div>
+      </div>
 
       {/* 📥 DEMANDES REÇUES */}
-      <section>
-        <h2>📥 Demandes reçues</h2>
+      {activeTab === "received" && (
+        <section>
+          <h2>📥 Demandes reçues</h2>
 
-        {requestsIn.length === 0 && (
-          <p style={{ opacity: 0.6 }}>Aucune demande pour le moment.</p>
-        )}
+          {requestsIn.length === 0 && (
+            <p style={{ opacity: 0.6 }}>Aucune demande pour le moment.</p>
+          )}
 
-        <div style={{ display: "grid", gap: 16 }}>
-          {requestsIn.map((r) => (
-            <article
-              key={r.id}
-              style={{
-                background: "var(--card-bg)",
-                padding: 16,
-                borderRadius: 12,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                display: "flex",
-                gap: 16,
-                alignItems: "center",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={r.cards.image_url || "/no-image.png"}
-                alt={r.cards.name}
-                style={{ width: 80, height: 110, borderRadius: 8 }}
-              />
-
-              <div style={{ flex: 1 }}>
-                <strong>
-                  {capitalizeWords(r.from_user?.display_name || "Inconnu")}
-                </strong>{" "}
-                souhaite obtenir :
-                <div style={{ marginTop: 6 }}>
-                  <strong>{r.cards.code}</strong> — {r.cards.name}
-                </div>
-                <span style={{ opacity: 0.6, fontSize: 12 }}>
-                  Reçu le {new Date(r.created_at).toLocaleString()}
-                </span>
-              </div>
-
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => accept(r)}
-                  style={{ background: "green", color: "white" }}
-                >
-                  Accepter
-                </button>
-                <button
-                  onClick={() => refuse(r)}
-                  style={{ background: "crimson", color: "white" }}
-                >
-                  Refuser
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* 📤 DEMANDES ENVOYÉES */}
-      <section>
-        <h2>📤 Demandes envoyées</h2>
-
-        {requestsOut.length === 0 && (
-          <p style={{ opacity: 0.6 }}>
-            Tu n’as fait aucune demande pour l’instant.
-          </p>
-        )}
-
-        <div style={{ display: "grid", gap: 16 }}>
-          {requestsOut.map((r) => (
-            <article
-              key={r.id}
-              style={{
-                background: "var(--card-bg)",
-                padding: 16,
-                borderRadius: 12,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                display: "flex",
-                gap: 16,
-                alignItems: "center",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={r.cards.image_url || "/no-image.png"}
-                alt={r.cards.name}
-                style={{ width: 80, height: 110, borderRadius: 8 }}
-              />
-
-              <div style={{ flex: 1 }}>
-                Demande envoyée à{" "}
-                <strong>
-                  {capitalizeWords(r.to_user?.display_name || "Inconnu")}
-                </strong>
-                <div style={{ marginTop: 6 }}>
-                  <strong>{r.cards.code}</strong> — {r.cards.name}
-                </div>
-                <span style={{ opacity: 0.6, fontSize: 12 }}>
-                  Envoyée le {new Date(r.created_at).toLocaleString()}
-                </span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* 🔄 ÉCHANGES IRL EN COURS */}
-      <section>
-        <h2>🔄 Échanges en cours (à valider en vrai)</h2>
-
-        {sessions.length === 0 && (
-          <p style={{ opacity: 0.6 }}>Aucun échange IRL en cours.</p>
-        )}
-
-        <div style={{ display: "grid", gap: 16 }}>
-          {sessions.map((s) => {
-            const isRequester = s.requester_id === me;
-            const otherName = capitalizeWords(
-              isRequester
-                ? s.owner?.display_name || "Inconnu"
-                : s.requester?.display_name || "Inconnu"
-            );
-
-            return (
+          <div style={{ display: "grid", gap: 16 }}>
+            {requestsIn.map((r) => (
               <article
-                key={s.id}
+                key={r.id}
                 style={{
                   background: "var(--card-bg)",
                   padding: 16,
@@ -470,93 +398,225 @@ export default function TradesPage() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={s.cards.image_url || "/no-image.png"}
-                  alt={s.cards.name}
+                  src={r.cards.image_url || "/no-image.png"}
+                  alt={r.cards.name}
                   style={{ width: 80, height: 110, borderRadius: 8 }}
                 />
 
                 <div style={{ flex: 1 }}>
-                  <strong>{otherName}</strong> est en échange avec toi pour :
+                  <strong>
+                    {capitalizeWords(r.from_user?.display_name || "Inconnu")}
+                  </strong>{" "}
+                  souhaite obtenir :
                   <div style={{ marginTop: 6 }}>
-                    <strong>{s.cards.code}</strong> — {s.cards.name}
+                    <strong>{r.cards.code}</strong> — {r.cards.name}
                   </div>
-
-                  <div style={{ marginTop: 6, opacity: 0.8, fontSize: 13 }}>
-                    ✔ Demandeur confirmé — ✔ Donneur confirmé
-                  </div>
-
                   <span style={{ opacity: 0.6, fontSize: 12 }}>
-                    Créé le {new Date(s.created_at).toLocaleString()}
+                    Reçu le {new Date(r.created_at).toLocaleString()}
                   </span>
                 </div>
 
-                <button
-                  onClick={() => confirmSession(s)}
-                  style={{ background: "green", color: "white" }}
-                >
-                  Confirmer IRL
-                </button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => accept(r)}
+                    style={{ background: "green", color: "white" }}
+                  >
+                    Accepter
+                  </button>
+                  <button
+                    onClick={() => refuse(r)}
+                    style={{ background: "crimson", color: "white" }}
+                  >
+                    Refuser
+                  </button>
+                </div>
               </article>
-            );
-          })}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 📤 DEMANDES ENVOYÉES */}
+      {activeTab === "sent" && (
+        <section>
+          <h2>📤 Demandes envoyées</h2>
+
+          {requestsOut.length === 0 && (
+            <p style={{ opacity: 0.6 }}>
+              Tu n’as fait aucune demande pour l’instant.
+            </p>
+          )}
+
+          <div style={{ display: "grid", gap: 16 }}>
+            {requestsOut.map((r) => (
+              <article
+                key={r.id}
+                style={{
+                  background: "var(--card-bg)",
+                  padding: 16,
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  display: "flex",
+                  gap: 16,
+                  alignItems: "center",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={r.cards.image_url || "/no-image.png"}
+                  alt={r.cards.name}
+                  style={{ width: 80, height: 110, borderRadius: 8 }}
+                />
+
+                <div style={{ flex: 1 }}>
+                  Demande envoyée à{" "}
+                  <strong>
+                    {capitalizeWords(r.to_user?.display_name || "Inconnu")}
+                  </strong>
+                  <div style={{ marginTop: 6 }}>
+                    <strong>{r.cards.code}</strong> — {r.cards.name}
+                  </div>
+                  <span style={{ opacity: 0.6, fontSize: 12 }}>
+                    Envoyée le {new Date(r.created_at).toLocaleString()}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 🔄 ÉCHANGES IRL EN COURS */}
+      {activeTab === "sessions" && (
+        <section>
+          <h2>🔄 Échanges en cours (à valider en vrai)</h2>
+
+          {sessions.length === 0 && (
+            <p style={{ opacity: 0.6 }}>Aucun échange IRL en cours.</p>
+          )}
+
+          <div style={{ display: "grid", gap: 16 }}>
+            {sessions.map((s) => {
+              const isRequester = s.requester_id === me;
+              const otherName = capitalizeWords(
+                isRequester
+                  ? s.owner?.display_name || "Inconnu"
+                  : s.requester?.display_name || "Inconnu"
+              );
+
+              return (
+                <article
+                  key={s.id}
+                  style={{
+                    background: "var(--card-bg)",
+                    padding: 16,
+                    borderRadius: 12,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    display: "flex",
+                    gap: 16,
+                    alignItems: "center",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={s.cards.image_url || "/no-image.png"}
+                    alt={s.cards.name}
+                    style={{ width: 80, height: 110, borderRadius: 8 }}
+                  />
+
+                  <div style={{ flex: 1 }}>
+                    <strong>{otherName}</strong> est en échange avec toi pour :
+                    <div style={{ marginTop: 6 }}>
+                      <strong>{s.cards.code}</strong> — {s.cards.name}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 6,
+                        opacity: 0.8,
+                        fontSize: 13,
+                      }}
+                    >
+                      ✔ Demandeur confirmé — ✔ Donneur confirmé
+                    </div>
+
+                    <span style={{ opacity: 0.6, fontSize: 12 }}>
+                      Créé le {new Date(s.created_at).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => confirmSession(s)}
+                    style={{ background: "green", color: "white" }}
+                  >
+                    Confirmer IRL
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* 📜 HISTORIQUE DES ÉCHANGES VALIDÉS */}
-      <section>
-        <h2>📜 Historique des échanges validés</h2>
+      {activeTab === "history" && (
+        <section>
+          <h2>📜 Historique des échanges validés</h2>
 
-        {history.length === 0 && (
-          <p style={{ opacity: 0.6 }}>Aucun échange validé pour le moment.</p>
-        )}
+          {history.length === 0 && (
+            <p style={{ opacity: 0.6 }}>
+              Aucun échange validé pour le moment.
+            </p>
+          )}
 
-        <div style={{ display: "grid", gap: 16 }}>
-          {history.map((h) => (
-            <article
-              key={h.id}
-              style={{
-                background: "var(--card-bg)",
-                padding: 16,
-                borderRadius: 12,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                display: "flex",
-                gap: 16,
-                alignItems: "center",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={h.cards.image_url || "/no-image.png"}
-                alt={h.cards.name}
-                style={{ width: 80, height: 110, borderRadius: 8 }}
-              />
+          <div style={{ display: "grid", gap: 16 }}>
+            {history.map((h) => (
+              <article
+                key={h.id}
+                style={{
+                  background: "var(--card-bg)",
+                  padding: 16,
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                  display: "flex",
+                  gap: 16,
+                  alignItems: "center",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={h.cards.image_url || "/no-image.png"}
+                  alt={h.cards.name}
+                  style={{ width: 80, height: 110, borderRadius: 8 }}
+                />
 
-              <div style={{ flex: 1 }}>
-                <div>
-                  Échange entre{" "}
-                  <strong>
-                    {capitalizeWords(
-                      h.requester?.display_name || "Inconnu"
-                    )}
-                  </strong>{" "}
-                  et{" "}
-                  <strong>
-                    {capitalizeWords(h.owner?.display_name || "Inconnu")}
-                  </strong>
+                <div style={{ flex: 1 }}>
+                  <div>
+                    Échange entre{" "}
+                    <strong>
+                      {capitalizeWords(
+                        h.requester?.display_name || "Inconnu"
+                      )}
+                    </strong>{" "}
+                    et{" "}
+                    <strong>
+                      {capitalizeWords(h.owner?.display_name || "Inconnu")}
+                    </strong>
+                  </div>
+
+                  <div style={{ marginTop: 6 }}>
+                    <strong>{h.cards.code}</strong> — {h.cards.name}
+                  </div>
+
+                  <span style={{ opacity: 0.6, fontSize: 12 }}>
+                    Validé le {new Date(h.created_at).toLocaleString()}
+                  </span>
                 </div>
-
-                <div style={{ marginTop: 6 }}>
-                  <strong>{h.cards.code}</strong> — {h.cards.name}
-                </div>
-
-                <span style={{ opacity: 0.6, fontSize: 12 }}>
-                  Validé le {new Date(h.created_at).toLocaleString()}
-                </span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

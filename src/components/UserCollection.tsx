@@ -1,210 +1,211 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 type CollectionRow = {
-  card_id: number
-  set_code: string
-  collector_no: string
-  card_name: string
-  image_url: string | null
-  quantity: number
-  user_id: string
-  user_display_name: string
-}
+  card_id: number;
+  set_code: string;
+  collector_no: string;
+  card_name: string;
+  image_url: string | null;
+  quantity: number;
+  user_id: string;
+  user_display_name: string;
+};
 
 type SetTotalRow = {
-  set_name: string
-  set_code: string
-  total_cards: number
-}
+  set_name: string;
+  set_code: string;
+  total_cards: number;
+};
 
 type UserCompletionRow = {
-  user_id: string
-  user_display_name: string
-  set_name: string
-  set_code: string
-  total_cards: number
-  owned_unique: number
-  completion_percent: number
-}
+  user_id: string;
+  user_display_name: string;
+  set_name: string;
+  set_code: string;
+  total_cards: number;
+  owned_unique: number;
+  completion_percent: number;
+};
 
 type CardSet = {
-  name: string
-  code: string
-  total_cards: number
-}
+  name: string;
+  code: string;
+  total_cards: number;
+};
 
 function capitalizeWords(str: string) {
   return str
-    .replace(/_/g, ' ')
-    .split(' ')
+    .replace(/_/g, " ")
+    .split(" ")
     .filter(Boolean)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(' ')
+    .join(" ");
 }
 
 export default function UserCollection({
   userId,
   editable = true,
 }: {
-  userId: string
-  editable?: boolean
+  userId: string;
+  editable?: boolean;
 }) {
-  const [collection, setCollection] = useState<CollectionRow[] | null>(null)
-  const [setTotals, setSetTotals] = useState<CardSet[]>([])
-  const [completion, setCompletion] = useState<UserCompletionRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [updating, setUpdating] = useState<number | null>(null)
+  const [collection, setCollection] = useState<CollectionRow[] | null>(null);
+  const [setTotals, setSetTotals] = useState<CardSet[]>([]);
+  const [completion, setCompletion] = useState<UserCompletionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [updating, setUpdating] = useState<number | null>(null);
 
-  const [selectedSet, setSelectedSet] = useState<string | null>(null)
-  const [ownedUnique, setOwnedUnique] = useState(0)
-  const [totalCards, setTotalCards] = useState(0)
+  const [selectedSet, setSelectedSet] = useState<string | null>(null);
+  const [ownedUnique, setOwnedUnique] = useState(0);
+  const [totalCards, setTotalCards] = useState(0);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     const load = async () => {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const [collRes, totalsRes, completionRes] = await Promise.all([
         supabase
-          .from('v_user_collection_detailed')
-          .select('*')
-          .eq('user_id', userId)
-          .order('set_code')
-          .order('collector_no'),
+          .from("v_user_collection_detailed")
+          .select("*")
+          .eq("user_id", userId)
+          .order("set_code")
+          .order("collector_no"),
+        supabase.from("v_set_totals").select("set_name, set_code, total_cards"),
         supabase
-          .from('v_set_totals')
-          .select('set_name, set_code, total_cards'),
-        supabase
-          .from('v_user_set_completion')
-          .select('*')
-          .eq('user_id', userId),
-      ])
+          .from("v_user_set_completion")
+          .select("*")
+          .eq("user_id", userId),
+      ]);
 
-      if (cancelled) return
+      if (cancelled) return;
 
       if (collRes.error) {
-        setError(collRes.error.message)
-        setLoading(false)
-        return
+        setError(collRes.error.message);
+        setLoading(false);
+        return;
       }
       if (totalsRes.error) {
-        setError(totalsRes.error.message)
-        setLoading(false)
-        return
+        setError(totalsRes.error.message);
+        setLoading(false);
+        return;
       }
       if (completionRes.error) {
-        setError(completionRes.error.message)
-        setLoading(false)
-        return
+        setError(completionRes.error.message);
+        setLoading(false);
+        return;
       }
 
-      setCollection((collRes.data || []) as CollectionRow[])
+      setCollection((collRes.data || []) as CollectionRow[]);
 
-      const totalsRows = (totalsRes.data || []) as SetTotalRow[]
+      const totalsRows = (totalsRes.data || []) as SetTotalRow[];
       const sets: CardSet[] = totalsRows
         .map((r) => ({
           name: r.set_name,
           code: r.set_code,
           total_cards: r.total_cards,
         }))
-        .sort((a, b) => a.name.localeCompare(b.name))
-      setSetTotals(sets)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      setSetTotals(sets);
 
-      setCompletion((completionRes.data || []) as UserCompletionRow[])
-      setLoading(false)
-    }
+      setCompletion((completionRes.data || []) as UserCompletionRow[]);
+      setLoading(false);
+    };
 
-    load()
+    load();
     return () => {
-      cancelled = true
-    }
-  }, [userId])
+      cancelled = true;
+    };
+  }, [userId]);
 
   useEffect(() => {
     if (!collection || collection.length === 0 || setTotals.length === 0) {
-      setOwnedUnique(0)
-      setTotalCards(0)
-      return
+      setOwnedUnique(0);
+      setTotalCards(0);
+      return;
     }
 
     if (selectedSet) {
-      const comp = completion.find((c) => c.set_name === selectedSet)
-      const owned = comp ? comp.owned_unique : 0
+      const comp = completion.find((c) => c.set_name === selectedSet);
+      const owned = comp ? comp.owned_unique : 0;
       const total =
         comp?.total_cards ??
         setTotals.find((s) => s.name === selectedSet)?.total_cards ??
-        0
+        0;
 
-      setOwnedUnique(owned)
-      setTotalCards(total)
+      setOwnedUnique(owned);
+      setTotalCards(total);
     } else {
-      const uniqueIds = new Set(collection.map((r) => r.card_id))
-      const ownedAll = uniqueIds.size
-      const totalAll = setTotals.reduce(
-        (sum, s) => sum + s.total_cards,
-        0
-      )
-      setOwnedUnique(ownedAll)
-      setTotalCards(totalAll)
+      const uniqueIds = new Set(collection.map((r) => r.card_id));
+      const ownedAll = uniqueIds.size;
+      const totalAll = setTotals.reduce((sum, s) => sum + s.total_cards, 0);
+      setOwnedUnique(ownedAll);
+      setTotalCards(totalAll);
     }
-  }, [collection, setTotals, completion, selectedSet])
+  }, [collection, setTotals, completion, selectedSet]);
 
   const changeQty = async (cardId: number, delta: number) => {
     try {
-      setUpdating(cardId)
+      setUpdating(cardId);
       if (delta > 0) {
-        await supabase.rpc('rpc_give_card', { p_card_id: cardId, p_qty: delta })
+        await supabase.rpc("rpc_give_card", {
+          p_card_id: cardId,
+          p_qty: delta,
+        });
       } else {
-        await supabase.rpc('rpc_remove_card', { p_card_id: cardId, p_qty: -delta })
+        await supabase.rpc("rpc_remove_card", {
+          p_card_id: cardId,
+          p_qty: -delta,
+        });
       }
 
       const [collRes, completionRes] = await Promise.all([
         supabase
-          .from('v_user_collection_detailed')
-          .select('*')
-          .eq('user_id', userId)
-          .order('set_code')
-          .order('collector_no'),
+          .from("v_user_collection_detailed")
+          .select("*")
+          .eq("user_id", userId)
+          .order("set_code")
+          .order("collector_no"),
         supabase
-          .from('v_user_set_completion')
-          .select('*')
-          .eq('user_id', userId),
-      ])
+          .from("v_user_set_completion")
+          .select("*")
+          .eq("user_id", userId),
+      ]);
 
       if (!collRes.error) {
-        setCollection((collRes.data || []) as CollectionRow[])
+        setCollection((collRes.data || []) as CollectionRow[]);
       }
       if (!completionRes.error) {
-        setCompletion((completionRes.data || []) as UserCompletionRow[])
+        setCompletion((completionRes.data || []) as UserCompletionRow[]);
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      alert('Erreur: ' + msg)
+      const msg = e instanceof Error ? e.message : String(e);
+      alert("Erreur: " + msg);
     } finally {
-      setUpdating(null)
+      setUpdating(null);
     }
-  }
+  };
 
-  if (loading) return <p>Chargement de la collection…</p>
-  if (error) return <p style={{ color: 'crimson' }}>Erreur: {error}</p>
-  if (!collection || collection.length === 0) return <p>Collection vide.</p>
+  if (loading) return <p>Chargement de la collection…</p>;
+  if (error) return <p style={{ color: "crimson" }}>Erreur: {error}</p>;
+  if (!collection || collection.length === 0) return <p>Collection vide.</p>;
 
   const ownerName = capitalizeWords(
-    collection[0]?.user_display_name || 'Utilisateur'
-  )
+    collection[0]?.user_display_name || "Utilisateur"
+  );
 
   const visible = selectedSet
     ? collection.filter((r) => r.set_code === selectedSet)
-    : collection
+    : collection;
 
   const percent =
-    totalCards > 0 ? Math.round((ownedUnique / totalCards) * 100) : 0
+    totalCards > 0 ? Math.round((ownedUnique / totalCards) * 100) : 0;
 
   return (
     <section>
@@ -241,16 +242,16 @@ export default function UserCollection({
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ fontSize: 12, color: 'var(--text-light)' }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label style={{ fontSize: 12, color: "var(--text-light)" }}>
               Filtrer
             </label>
             <select
               className="rpg-select"
-              value={selectedSet ?? ''}
+              value={selectedSet ?? ""}
               onChange={(e) => {
-                const v = e.target.value || null
-                setSelectedSet(v)
+                const v = e.target.value || null;
+                setSelectedSet(v);
               }}
             >
               <option value="">Toutes les extensions</option>
@@ -266,24 +267,16 @@ export default function UserCollection({
 
       <div className="grid-view">
         {visible.map((r) => (
-          <article
-            key={r.card_id}
-            className="card"
-          >
+          <article key={r.card_id} className="card">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {r.image_url && <img src={r.image_url} alt={r.card_name} />}
 
-            {r.quantity > 1 && (
-              <span className="badge-qty">
-                ×{r.quantity}
-              </span>
-            )}
+            {r.quantity > 1 && <span className="badge-qty">×{r.quantity}</span>}
 
             <div className="card-content">
-              <strong>
-                [{r.set_code}] {r.collector_no}
-              </strong>
-              <span>{r.card_name}</span>
+              <strong style={{ fontSize: 15 }}>{r.card_name}</strong>
+
+              <span style={{ opacity: 0.8 }}>{r.set_code}</span>
 
               {editable && (
                 <div className="card-actions">
@@ -308,5 +301,5 @@ export default function UserCollection({
         ))}
       </div>
     </section>
-  )
+  );
 }

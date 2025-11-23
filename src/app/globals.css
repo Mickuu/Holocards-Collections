@@ -728,6 +728,50 @@ html.theme-loaded {
 }
 
 /* ————————————————————————————————
+   🟪 Boutons RPG pour les onglets Trades
+———————————————————————————————— */
+.trade-tab {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background:
+    radial-gradient(circle at top left, rgba(155,168,255,0.18), transparent 60%),
+    radial-gradient(circle at bottom right, rgba(120,200,255,0.15), transparent 60%),
+    var(--card-bg);
+  border: 1px solid rgba(120,150,255,0.35);
+  backdrop-filter: blur(6px);
+  color: var(--text-main);
+  transition: 
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trade-tab:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 14px rgba(120,150,255,0.45),
+    0 0 0 1px rgba(255,255,255,0.15);
+}
+
+.trade-tab.active {
+  background:
+    radial-gradient(circle at top left, rgba(165,180,255,0.32), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(140,210,255,0.25), transparent 55%),
+    var(--accent);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow:
+    0 6px 18px rgba(78,108,242,0.55),
+    inset 0 0 4px rgba(255,255,255,0.25);
+}
+
+/* ————————————————————————————————
    🌚 Variantes mode sombre
 ———————————————————————————————— */
 
