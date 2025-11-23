@@ -72,21 +72,21 @@ export default function Home() {
     })
   }
 
-  if (loading) return <p style={{ padding: 16 }}>Chargement…</p>
+  if (loading) return <p className="page-message">Chargement…</p>
 
   return (
-    <div style={{ padding: 16 }}>
+    <div className="page">
       {!me ? (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 20 }}>
+        <div className="auth-buttons">
           <button
             onClick={loginDiscord}
-            style={{ background: '#5865F2', color: 'white', border: 'none', borderRadius: 6, padding: '10px 16px', cursor: 'pointer' }}
+            className="btn btn-auth-discord"
           >
             Se connecter avec Discord
           </button>
           <button
             onClick={loginTwitch}
-            style={{ background: '#9146FF', color: 'white', border: 'none', borderRadius: 6, padding: '10px 16px', cursor: 'pointer' }}
+            className="btn btn-auth-twitch"
           >
             Se connecter avec Twitch
           </button>

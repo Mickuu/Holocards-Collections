@@ -7,9 +7,9 @@ type Card = {
   id: number;
   name: string;
   image_url: string | null;
-  code: string;
-  rarity: string | null;
-  color: string | null;
+  code: string; // collector_no
+  rarity: string | null; // rarity_code
+  color: string | null; // colors
 };
 
 type RequestRow = {
@@ -24,7 +24,21 @@ type RequestRow = {
   to_user: { display_name: string | null } | null;
 };
 
-// Format “Micku_san” → “Micku San”
+type SessionRow = {
+  id: number;
+  requester_id: string;
+  owner_id: string;
+  card_id: number;
+  status: string;
+  created_at: string;
+  confirmed_by_requester: boolean;
+  confirmed_by_owner: boolean;
+  cards: Card;
+  requester: { display_name: string | null } | null;
+  owner: { display_name: string | null } | null;
+};
+
+// "micku_san" → "Micku San"
 function capitalizeWords(str: string) {
   return str
     .replace(/_/g, " ")
@@ -35,7 +49,7 @@ function capitalizeWords(str: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapDbRowToRequestRow(r: any): RequestRow {
+function mapDbRequestRow(r: any): RequestRow {
   const cardRaw = r.cards;
   const fromRaw = r.from_user;
   const toRaw = r.to_user;
@@ -55,9 +69,9 @@ function mapDbRowToRequestRow(r: any): RequestRow {
       id: card?.id,
       name: card?.name,
       image_url: card?.image_url ?? null,
-      code: card?.code,
-      rarity: card?.rarity ?? null,
-      color: card?.color ?? null,
+      code: card?.collector_no,
+      rarity: card?.rarity_code ?? null,
+      color: card?.colors ?? null,
     },
     from_user: fromUser
       ? { display_name: fromUser.display_name ?? null }
@@ -66,10 +80,46 @@ function mapDbRowToRequestRow(r: any): RequestRow {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapDbSessionRow(r: any): SessionRow {
+  const cardRaw = r.cards;
+  const requesterRaw = r.requester;
+  const ownerRaw = r.owner;
+
+  const card = Array.isArray(cardRaw) ? cardRaw[0] : cardRaw;
+  const requester = Array.isArray(requesterRaw) ? requesterRaw[0] : requesterRaw;
+  const owner = Array.isArray(ownerRaw) ? ownerRaw[0] : ownerRaw;
+
+  return {
+    id: r.id,
+    requester_id: r.requester_id,
+    owner_id: r.owner_id,
+    card_id: r.card_id,
+    status: r.status,
+    created_at: r.created_at,
+    confirmed_by_requester: !!r.confirmed_by_requester,
+    confirmed_by_owner: !!r.confirmed_by_owner,
+    cards: {
+      id: card?.id,
+      name: card?.name,
+      image_url: card?.image_url ?? null,
+      code: card?.collector_no,
+      rarity: card?.rarity_code ?? null,
+      color: card?.colors ?? null,
+    },
+    requester: requester
+      ? { display_name: requester.display_name ?? null }
+      : null,
+    owner: owner ? { display_name: owner.display_name ?? null } : null,
+  };
+}
+
 export default function TradesPage() {
   const [me, setMe] = useState<string | null>(null);
   const [requestsIn, setRequestsIn] = useState<RequestRow[]>([]);
   const [requestsOut, setRequestsOut] = useState<RequestRow[]>([]);
+  const [sessions, setSessions] = useState<SessionRow[]>([]);
+  const [history, setHistory] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -84,7 +134,7 @@ export default function TradesPage() {
       }
       setMe(user.id);
 
-      // 📥 demandes reçues
+      // 📥 Demandes reçues (pending)
       const { data: incoming } = await supabase
         .from("trade_requests")
         .select(
@@ -103,7 +153,7 @@ export default function TradesPage() {
         .eq("to_user_id", user.id)
         .eq("status", "pending");
 
-      // 📤 demandes envoyées
+      // 📤 Demandes envoyées (pending)
       const { data: outgoing } = await supabase
         .from("trade_requests")
         .select(
@@ -122,8 +172,53 @@ export default function TradesPage() {
         .eq("from_user_id", user.id)
         .eq("status", "pending");
 
-      setRequestsIn((incoming || []).map(mapDbRowToRequestRow));
-      setRequestsOut((outgoing || []).map(mapDbRowToRequestRow));
+      // 🔄 Sessions IRL en cours (non completed)
+      const { data: sessionsRaw } = await supabase
+        .from("trade_sessions")
+        .select(
+          `
+          id,
+          requester_id,
+          owner_id,
+          card_id,
+          status,
+          created_at,
+          confirmed_by_requester,
+          confirmed_by_owner,
+          cards:card_id (*),
+          requester:requester_id (display_name),
+          owner:owner_id (display_name)
+        `
+        )
+        .or(`requester_id.eq.${user.id},owner_id.eq.${user.id}`)
+        .neq("status", "completed");
+
+      // 📜 Historique des échanges complétés
+      const { data: historyRaw } = await supabase
+        .from("trade_sessions")
+        .select(
+          `
+          id,
+          requester_id,
+          owner_id,
+          card_id,
+          status,
+          created_at,
+          confirmed_by_requester,
+          confirmed_by_owner,
+          cards:card_id (*),
+          requester:requester_id (display_name),
+          owner:owner_id (display_name)
+        `
+        )
+        .or(`requester_id.eq.${user.id},owner_id.eq.${user.id}`)
+        .eq("status", "completed")
+        .order("created_at", { ascending: false });
+
+      setRequestsIn((incoming || []).map(mapDbRequestRow));
+      setRequestsOut((outgoing || []).map(mapDbRequestRow));
+      setSessions((sessionsRaw || []).map(mapDbSessionRow));
+      setHistory((historyRaw || []).map(mapDbSessionRow));
 
       setLoading(false);
     };
@@ -131,17 +226,52 @@ export default function TradesPage() {
     load();
   }, []);
 
-  // Accepter (statut = accepted)
+  // ✅ Accepter → passe la demande en accepted + crée une session IRL
   const accept = async (req: RequestRow) => {
+    // 1) mettre la demande à "accepted"
     await supabase
       .from("trade_requests")
       .update({ status: "accepted" })
       .eq("id", req.id);
 
+    // 2) créer la session + récupérer la ligne complète (avec cartes + users)
+    const { data: inserted, error: insertError } = await supabase
+      .from("trade_sessions")
+      .insert({
+        requester_id: req.from_user_id,
+        owner_id: req.to_user_id,
+        card_id: req.card_id,
+        status: "waiting_real_life",
+      })
+      .select(
+        `
+        id,
+        requester_id,
+        owner_id,
+        card_id,
+        status,
+        created_at,
+        confirmed_by_requester,
+        confirmed_by_owner,
+        cards:card_id (*),
+        requester:requester_id (display_name),
+        owner:owner_id (display_name)
+      `
+      )
+      .single();
+
+    if (insertError) {
+      console.error("Erreur insert trade_sessions:", insertError.message);
+    } else if (inserted) {
+      // 3) mettre à jour la liste des sessions en cours côté front
+      setSessions((prev) => [...prev, mapDbSessionRow(inserted)]);
+    }
+
+    // 4) retirer la demande de la liste "Demandes reçues"
     setRequestsIn((prev) => prev.filter((r) => r.id !== req.id));
   };
 
-  // Refuser (statut = refused)
+  // ❌ Refuser
   const refuse = async (req: RequestRow) => {
     await supabase
       .from("trade_requests")
@@ -151,9 +281,49 @@ export default function TradesPage() {
     setRequestsIn((prev) => prev.filter((r) => r.id !== req.id));
   };
 
+  // ✅ 1 clic = échange terminé
+  const confirmSession = async (session: SessionRow) => {
+    if (!me) return;
+
+    // On met les deux flags à true + status=completed côté BDD
+    await supabase
+      .from("trade_sessions")
+      .update({
+        confirmed_by_requester: true,
+        confirmed_by_owner: true,
+        status: "completed",
+      })
+      .eq("id", session.id);
+
+    // On applique la RPC qui bouge la carte d’un user à l’autre
+    await supabase.rpc("finalize_trade", {
+      p_owner_id: session.owner_id,
+      p_requester_id: session.requester_id,
+      p_card_id: session.card_id,
+    });
+
+    // On retire de la liste "en cours"
+    setSessions((prev) => prev.filter((s) => s.id !== session.id));
+
+    // On ajoute en haut de l’historique côté front
+    setHistory((prev) => [
+      {
+        ...session,
+        status: "completed",
+        confirmed_by_owner: true,
+        confirmed_by_requester: true,
+      },
+      ...prev,
+    ]);
+  };
+
   if (loading) return <p style={{ padding: 16 }}>Chargement…</p>;
   if (!me)
-    return <p style={{ padding: 16 }}>Connecte-toi pour voir tes échanges.</p>;
+    return (
+      <p style={{ padding: 16 }}>
+        Connecte-toi pour voir tes échanges.
+      </p>
+    );
 
   return (
     <main style={{ padding: 16, display: "grid", gap: 32 }}>
@@ -261,6 +431,126 @@ export default function TradesPage() {
                 </div>
                 <span style={{ opacity: 0.6, fontSize: 12 }}>
                   Envoyée le {new Date(r.created_at).toLocaleString()}
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* 🔄 ÉCHANGES IRL EN COURS */}
+      <section>
+        <h2>🔄 Échanges en cours (à valider en vrai)</h2>
+
+        {sessions.length === 0 && (
+          <p style={{ opacity: 0.6 }}>Aucun échange IRL en cours.</p>
+        )}
+
+        <div style={{ display: "grid", gap: 16 }}>
+          {sessions.map((s) => {
+            const isRequester = s.requester_id === me;
+            const otherName = capitalizeWords(
+              isRequester
+                ? s.owner?.display_name || "Inconnu"
+                : s.requester?.display_name || "Inconnu"
+            );
+
+            return (
+              <article
+                key={s.id}
+                style={{
+                  background: "var(--card-bg)",
+                  padding: 16,
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  display: "flex",
+                  gap: 16,
+                  alignItems: "center",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={s.cards.image_url || "/no-image.png"}
+                  alt={s.cards.name}
+                  style={{ width: 80, height: 110, borderRadius: 8 }}
+                />
+
+                <div style={{ flex: 1 }}>
+                  <strong>{otherName}</strong> est en échange avec toi pour :
+                  <div style={{ marginTop: 6 }}>
+                    <strong>{s.cards.code}</strong> — {s.cards.name}
+                  </div>
+
+                  <div style={{ marginTop: 6, opacity: 0.8, fontSize: 13 }}>
+                    ✔ Demandeur confirmé — ✔ Donneur confirmé
+                  </div>
+
+                  <span style={{ opacity: 0.6, fontSize: 12 }}>
+                    Créé le {new Date(s.created_at).toLocaleString()}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => confirmSession(s)}
+                  style={{ background: "green", color: "white" }}
+                >
+                  Confirmer IRL
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 📜 HISTORIQUE DES ÉCHANGES VALIDÉS */}
+      <section>
+        <h2>📜 Historique des échanges validés</h2>
+
+        {history.length === 0 && (
+          <p style={{ opacity: 0.6 }}>Aucun échange validé pour le moment.</p>
+        )}
+
+        <div style={{ display: "grid", gap: 16 }}>
+          {history.map((h) => (
+            <article
+              key={h.id}
+              style={{
+                background: "var(--card-bg)",
+                padding: 16,
+                borderRadius: 12,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                display: "flex",
+                gap: 16,
+                alignItems: "center",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={h.cards.image_url || "/no-image.png"}
+                alt={h.cards.name}
+                style={{ width: 80, height: 110, borderRadius: 8 }}
+              />
+
+              <div style={{ flex: 1 }}>
+                <div>
+                  Échange entre{" "}
+                  <strong>
+                    {capitalizeWords(
+                      h.requester?.display_name || "Inconnu"
+                    )}
+                  </strong>{" "}
+                  et{" "}
+                  <strong>
+                    {capitalizeWords(h.owner?.display_name || "Inconnu")}
+                  </strong>
+                </div>
+
+                <div style={{ marginTop: 6 }}>
+                  <strong>{h.cards.code}</strong> — {h.cards.name}
+                </div>
+
+                <span style={{ opacity: 0.6, fontSize: 12 }}>
+                  Validé le {new Date(h.created_at).toLocaleString()}
                 </span>
               </div>
             </article>

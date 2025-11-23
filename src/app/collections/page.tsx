@@ -450,7 +450,7 @@ export default function CollectionsPage() {
                                 bottom: 6,
                                 right: 6,
                                 background: "rgba(80,160,255,0.95)",
-                                color: "#fff",
+                                color: "#000",
                                 fontWeight: 900,
                                 fontSize: 11,
                                 padding: "2px 6px",

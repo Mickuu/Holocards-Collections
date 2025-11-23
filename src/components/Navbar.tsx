@@ -58,29 +58,9 @@ export default function Navbar() {
   };
 
   return (
-    <nav
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        background: "var(--card-bg)",
-        backdropFilter: "blur(10px)",
-        borderRadius: 10,
-        padding: "10px 16px",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-        margin: "16px auto",
-        maxWidth: 1200,
-      }}
-    >
-      <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-        <Link
-          href="/"
-          style={{
-            fontWeight: "bold",
-            textDecoration: "none",
-            color: "var(--text-main)",
-          }}
-        >
+    <nav>
+      <div className="navbar-left">
+        <Link href="/" className="nav-link nav-link-strong">
           🏠 Accueil
         </Link>
 
@@ -88,35 +68,30 @@ export default function Navbar() {
           <>
             <Link
               href={`/user/${encodeURIComponent(me.id)}`}
-              style={{ textDecoration: "none", color: "var(--text-main)" }}
+              className="nav-link"
             >
               💼 Ma collection
             </Link>
 
-            <Link
-              href="/collections"
-              style={{ textDecoration: "none", color: "var(--text-main)" }}
-            >
+            <Link href="/collections" className="nav-link">
               🃏 Collections des joueurs
             </Link>
 
-            {/* 🔁 Nouvelle page des échanges */}
-            <Link
-              href="/trades"
-              style={{ textDecoration: "none", color: "var(--text-main)" }}
-            >
+            <Link href="/trades" className="nav-link">
               🔁 Échanges
             </Link>
           </>
         )}
       </div>
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+      <div className="navbar-right">
         <ThemeToggle />
         {me && (
           <>
             <span style={{ fontWeight: "bold" }}>{me.label}</span>
-            <button onClick={logout}>Déconnexion</button>
+            <button className="btn btn-sm" onClick={logout}>
+              Déconnexion
+            </button>
           </>
         )}
       </div>

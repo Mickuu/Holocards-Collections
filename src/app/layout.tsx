@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Navbar rendue côté client uniquement */}
         <NavbarShell />
 
-        <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px 24px" }}>
+        <main className="app-main">
           {children}
         </main>
       </body>
