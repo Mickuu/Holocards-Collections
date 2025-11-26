@@ -561,11 +561,30 @@ html.theme-loaded {
   backdrop-filter: blur(4px);
 }
 
+/* =========================================================
+   🖥️ ULTRA WIDE (écrans 21:9, 32:9, ≥ 1800px)
+========================================================= */
+
+@media (min-width: 1800px) {
+  /* conteneur principal sur toutes les pages */
+  .app-main,
+  main,
+  .ff7-layout,
+  nav {
+    max-width: 2200px;
+  }
+
+  body {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}
+
 /* ————————————————————————————————
    ⚔️ Bloc d'échanges RPG (clair + sombre)
 ———————————————————————————————— */
 
-/* 🌞 Style de base = clair, façon interface de RPG moderne */
+/* 🌞 Style de base = clair */
 .trade-panel {
   margin-bottom: 16px;
   padding: 14px 16px;
@@ -958,7 +977,7 @@ select option:hover {
   box-shadow: 0 3px 10px rgba(0,0,0,0.25);
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 14px;
   margin-bottom: 12px;
   animation: panelSpawn 400ms cubic-bezier(0.16, 1, 0.3, 1);
