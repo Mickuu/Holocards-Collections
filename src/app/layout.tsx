@@ -15,10 +15,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* Navbar rendue côté client uniquement */}
         <NavbarShell />
 
-        <main className="app-main">
+        {/* 👉 Panneau central façon menu FF7 */}
+        <main className="app-main ff7-layout">
           {children}
         </main>
       </body>
