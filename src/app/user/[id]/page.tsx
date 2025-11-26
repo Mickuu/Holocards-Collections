@@ -35,7 +35,7 @@ export default function UserPage() {
   return (
     <main style={{ padding: 16 }}>
       {/* Le titre est maintenant géré par UserCollection */}
-      <UserCollection userId={params.id} editable={false} />
+      <UserCollection userId={params.id} editable={true} />
     </main>
   )
 }

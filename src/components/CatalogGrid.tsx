@@ -34,6 +34,10 @@ export default function CatalogGrid() {
   const [colors, setColors] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
+  // 🔹 nouveau filtre "Talents" (colonne name)
+  const [names, setNames] = useState<string[]>([]);
+  const [selectedName, setSelectedName] = useState<string | null>(null);
+
   // Chargement user + cartes + collection
   useEffect(() => {
     const loadData = async () => {
@@ -85,6 +89,12 @@ export default function CatalogGrid() {
         )
       ).sort();
       setColors(uniqueColors);
+
+      // 🔹 liste des talents (colonne name)
+      const uniqueNames = Array.from(
+        new Set(allCards.map((c) => c.name).filter((n): n is string => !!n))
+      ).sort();
+      setNames(uniqueNames);
 
       setLoading(false);
     };
@@ -151,7 +161,8 @@ export default function CatalogGrid() {
   const visibleCards = cards
     .filter((c) => (selectedSet ? c.set_name === selectedSet : true))
     .filter((c) => (selectedRarity ? c.rarity_code === selectedRarity : true))
-    .filter((c) => (selectedColor ? c.colors === selectedColor : true));
+    .filter((c) => (selectedColor ? c.colors === selectedColor : true))
+    .filter((c) => (selectedName ? c.name === selectedName : true));
 
   const title = selectedSet ?? "Toutes les extensions";
 
@@ -217,6 +228,21 @@ export default function CatalogGrid() {
               {colors.map((c) => (
                 <option key={c} value={c}>
                   {c}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* 🔹 Nouveau filtre "Talents" (colonne name) */}
+          {names.length > 0 && (
+            <select
+              value={selectedName ?? ""}
+              onChange={(e) => setSelectedName(e.target.value || null)}
+            >
+              <option value="">Tous les talents</option>
+              {names.map((n) => (
+                <option key={n} value={n}>
+                  {n}
                 </option>
               ))}
             </select>
