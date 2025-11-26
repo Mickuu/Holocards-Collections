@@ -1,12 +1,12 @@
-'use client'
-import { useState } from 'react'
-import Navbar from '@/components/Navbar'
+'use client';
 
-/** Rend la Navbar uniquement côté client, sans setState dans un effet */
+import dynamic from 'next/dynamic';
+
+// Navbar rendue uniquement côté client (pas de SSR)
+const Navbar = dynamic(() => import('./Navbar'), {
+  ssr: false,
+});
+
 export default function NavbarShell() {
-  // true si on est déjà côté client, false côté serveur
-  const [mounted] = useState(() => typeof window !== 'undefined')
-
-  if (!mounted) return null
-  return <Navbar />
+  return <Navbar />;
 }

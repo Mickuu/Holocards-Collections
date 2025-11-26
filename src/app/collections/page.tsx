@@ -10,6 +10,7 @@ type Card = {
   rarity: string | null;
   color: string | null;
   image_url: string | null;
+  set_name: string; // 🔹 nécessaire pour filtrer par extension
 };
 
 type Row = {
@@ -51,10 +52,14 @@ export default function CollectionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [meId, setMeId] = useState<string | null>(null);
 
+  const [meId, setMeId] = useState<string | null>(null);
   const [offers, setOffers] = useState<TradeOffer[]>([]);
   const [requests, setRequests] = useState<TradeRequest[]>([]);
+
+  // 🔹 Filtres
+  const [sets, setSets] = useState<string[]>([]);
+  const [selectedSet, setSelectedSet] = useState<string | null>(null);
 
   // Chargement user + cartes + offres d'échange + demandes
   useEffect(() => {
@@ -80,7 +85,19 @@ export default function CollectionsPage() {
         setError(error.message);
         return;
       }
-      setRows(data as unknown as Row[]);
+
+      const typedRows = (data || []) as unknown as Row[];
+      setRows(typedRows);
+
+      // 🟦 liste des extensions uniques (set_name)
+      const uniqueSets = Array.from(
+        new Set(
+          typedRows
+            .map((r) => r.cards.set_name)
+            .filter((s): s is string => !!s)
+        )
+      ).sort();
+      setSets(uniqueSets);
 
       const { data: offersData } = await supabase
         .from("trade_offers")
@@ -166,8 +183,8 @@ export default function CollectionsPage() {
     return m;
   }, [meId, rows]);
 
-  // 🔍 Filtre recherche
-  const filtered = useMemo(() => {
+  // 🔍 Filtre recherche par joueur
+  const filteredGroups = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return groups;
     return groups.filter(
@@ -248,20 +265,50 @@ export default function CollectionsPage() {
     <main style={{ display: "grid", gap: 16 }}>
       <h1>Collections des joueurs</h1>
 
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Rechercher un joueur..."
+      {/* Barre de recherche + filtre extensions */}
+      <div
         style={{
-          maxWidth: 360,
-          padding: 8,
-          borderRadius: 8,
-          border: "1px solid #ccc",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 10,
+          alignItems: "center",
         }}
-      />
+      >
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher un joueur..."
+          style={{
+            maxWidth: 360,
+            padding: 8,
+            borderRadius: 8,
+            border: "1px solid #ccc",
+          }}
+        />
+
+        {sets.length > 0 && (
+          <select
+            value={selectedSet ?? ""}
+            onChange={(e) => setSelectedSet(e.target.value || null)}
+            style={{
+              maxWidth: 260,
+              padding: 8,
+              borderRadius: 8,
+              border: "1px solid #ccc",
+            }}
+          >
+            <option value="">Toutes les extensions</option>
+            {sets.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
 
       <ul style={{ display: "grid", gap: 12 }}>
-        {filtered.map((g) => {
+        {filteredGroups.map((g) => {
           // 💱 Potentiel d’échange avec le user connecté
           const wantFromThem: Card[] = [];
           const canOffer: Card[] = [];
@@ -297,7 +344,6 @@ export default function CollectionsPage() {
           const wantFromThemVisible = wantFromThem.filter((c) =>
             theirOffersSet.has(c.id)
           );
-
           const canOfferVisible = canOffer;
 
           const hasTradeContent =
@@ -354,7 +400,9 @@ export default function CollectionsPage() {
                             <div className="trade-side-title">
                               ⚔️ Cartes que tu proposes
                               <br />
-                              <span style={{ fontSize: 11, opacity: 0.8 }}>
+                              <span
+                                style={{ fontSize: 11, opacity: 0.8 }}
+                              >
                                 (Clique pour ajouter/enlever de ta liste
                                 d’échange)
                               </span>
@@ -379,7 +427,9 @@ export default function CollectionsPage() {
                                       className="trade-card-img"
                                     />
                                     {isSelected && (
-                                      <div className="trade-card-check">✔</div>
+                                      <div className="trade-card-check">
+                                        ✔
+                                      </div>
                                     )}
                                   </div>
                                 );
@@ -393,86 +443,93 @@ export default function CollectionsPage() {
 
                   {/* Grille des cartes du joueur */}
                   <div className="grid-view">
-                    {g.entries.map(({ quantity, card }) => {
-                      const isMe = g.user_id === meId;
-                      const isRequested =
-                        !isMe && myRequestsForThisUser.has(card.id);
+                    {g.entries
+                      .filter(({ card }) =>
+                        selectedSet ? card.set_name === selectedSet : true
+                      )
+                      .map(({ quantity, card }) => {
+                        const isMe = g.user_id === meId;
+                        const isRequested =
+                          !isMe && myRequestsForThisUser.has(card.id);
 
-                      const handleClick = () => {
-                        if (!meId) return;
-                        if (isMe) return; // on ne demande pas ses propres cartes
-                        toggleRequest(g.user_id, card.id);
-                      };
+                        const handleClick = () => {
+                          if (!meId) return;
+                          if (isMe) return; // on ne demande pas ses propres cartes
+                          toggleRequest(g.user_id, card.id);
+                        };
 
-                      return (
-                        <article
-                          key={card.id}
-                          className="card"
-                          onClick={handleClick}
-                          style={{
-                            position: "relative",
-                            padding: 6,
-                            cursor: !meId || isMe ? "default" : "pointer",
-                            boxShadow: isRequested
-                              ? "0 0 10px rgba(80,160,255,0.8)"
-                              : undefined,
-                            outline: isRequested
-                              ? "2px solid rgba(80,160,255,0.9)"
-                              : "none",
-                          }}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={card.image_url || "/no-image.png"}
-                            alt={card.name}
-                          />
-                          <span
+                        return (
+                          <article
+                            key={card.id}
+                            className="card"
+                            onClick={handleClick}
                             style={{
-                              position: "absolute",
-                              top: 8,
-                              right: 8,
-                              background: "var(--accent)",
-                              color: "#fff",
-                              fontWeight: 700,
-                              fontSize: 12,
-                              padding: "2px 6px",
-                              borderRadius: 999,
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                              position: "relative",
+                              padding: 6,
+                              cursor:
+                                !meId || isMe ? "default" : "pointer",
+                              boxShadow: isRequested
+                                ? "0 0 10px rgba(80,160,255,0.8)"
+                                : undefined,
+                              outline: isRequested
+                                ? "2px solid rgba(80,160,255,0.9)"
+                                : "none",
                             }}
                           >
-                            ×{quantity}
-                          </span>
-
-                          {isRequested && (
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={card.image_url || "/no-image.png"}
+                              alt={card.name}
+                            />
                             <span
                               style={{
                                 position: "absolute",
-                                bottom: 6,
-                                right: 6,
-                                background: "rgba(80,160,255,0.95)",
-                                color: "#000",
-                                fontWeight: 900,
-                                fontSize: 11,
+                                top: 8,
+                                right: 8,
+                                background: "var(--accent)",
+                                color: "#fff",
+                                fontWeight: 700,
+                                fontSize: 12,
                                 padding: "2px 6px",
                                 borderRadius: 999,
-                                border: "1px solid #000",
+                                boxShadow:
+                                  "0 2px 8px rgba(0,0,0,0.2)",
                               }}
                             >
-                              ★ Demandée
+                              ×{quantity}
                             </span>
-                          )}
 
-                          <div className="card-content">
-                            <strong>{card.code}</strong>
-                            <span>{card.name}</span>
-                            <span>
-                              {card.rarity ?? ""}
-                              {card.color ? ` | ${card.color}` : ""}
-                            </span>
-                          </div>
-                        </article>
-                      );
-                    })}
+                            {isRequested && (
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  bottom: 6,
+                                  right: 6,
+                                  background:
+                                    "rgba(80,160,255,0.95)",
+                                  color: "#000",
+                                  fontWeight: 900,
+                                  fontSize: 11,
+                                  padding: "2px 6px",
+                                  borderRadius: 999,
+                                  border: "1px solid #000",
+                                }}
+                              >
+                                ★ Demandée
+                              </span>
+                            )}
+
+                            <div className="card-content">
+                              <strong>{card.code}</strong>
+                              <span>{card.name}</span>
+                              <span>
+                                {card.rarity ?? ""}
+                                {card.color ? ` | ${card.color}` : ""}
+                              </span>
+                            </div>
+                          </article>
+                        );
+                      })}
                   </div>
                 </div>
               )}
