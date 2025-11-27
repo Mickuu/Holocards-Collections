@@ -592,9 +592,9 @@ export default function UserCollection({
 
               <div className="card-content">
                 <strong>
-                  [{r.set_code}] {r.collector_no}
+                  [{r.card_name}]
                 </strong>
-                <span>{r.card_name}</span>
+                <span>{r.colors} | {r.rarity_code}</span>
 
                 {editable && (
                   <div className="card-actions">

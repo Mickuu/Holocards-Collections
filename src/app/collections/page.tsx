@@ -486,7 +486,7 @@ export default function CollectionsPage() {
                                 position: "absolute",
                                 top: 8,
                                 right: 8,
-                                background: "var(--accent)",
+                                background: "var(--accent-darker)",
                                 color: "#fff",
                                 fontWeight: 700,
                                 fontSize: 12,

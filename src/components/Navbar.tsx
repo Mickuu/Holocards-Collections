@@ -3,16 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import type { User } from "@supabase/supabase-js";
 import ThemeToggle from "@/components/ThemeToggle";
+import type { User } from "@supabase/supabase-js";
 
-// "micku_san" → "Micku San"
 function capitalizeWords(str: string) {
   return str
     .replace(/_/g, " ")
     .split(" ")
     .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .map((w) => w[0].toUpperCase() + w.slice(1).toLowerCase())
     .join(" ");
 }
 
@@ -22,33 +21,25 @@ export default function Navbar() {
   const [me, setMe] = useState<Me | null>(null);
 
   useEffect(() => {
-    const buildLabel = (user: User | null): Me | null => {
-      if (!user) return null;
-
+    const buildLabel = (u: User | null): Me | null => {
+      if (!u) return null;
       const raw =
-        user.user_metadata?.full_name ||
-        user.user_metadata?.user_name ||
-        user.email ||
-        user.id;
-
-      return {
-        id: user.id,
-        label: capitalizeWords(String(raw)),
-      };
+        u.user_metadata?.full_name ||
+        u.user_metadata?.user_name ||
+        u.email ||
+        u.id;
+      return { id: u.id, label: capitalizeWords(String(raw)) };
     };
 
     const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setMe(buildLabel(user));
+      const { data } = await supabase.auth.getUser();
+      setMe(buildLabel(data.user));
     };
     init();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-      setMe(buildLabel(session?.user ?? null));
-    });
-
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, sess) =>
+      setMe(buildLabel(sess?.user ?? null))
+    );
     return () => sub.subscription.unsubscribe();
   }, []);
 
@@ -60,16 +51,11 @@ export default function Navbar() {
   return (
     <nav>
       <div className="navbar-left">
-        <Link href="/" className="nav-link nav-link-strong">
-          🏠 Accueil
-        </Link>
+        <Link href="/" className="nav-link nav-link-strong">🏠 Accueil</Link>
 
         {me && (
           <>
-            <Link
-              href={`/user/${encodeURIComponent(me.id)}`}
-              className="nav-link"
-            >
+            <Link href={`/user/${me.id}`} className="nav-link">
               💼 Ma collection
             </Link>
 

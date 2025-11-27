@@ -1,45 +1,28 @@
-'use client'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
-import UserCollection from '@/components/UserCollection'
-import CatalogGrid from '@/components/CatalogGrid'
+"use client";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import UserCollection from "@/components/UserCollection";
+import CatalogGrid from "@/components/CatalogGrid";
 
-// ← change juste cette valeur pour afficher/masquer la section
-const SHOW_OWN_COLLECTION = false
+const SHOW_OWN_COLLECTION = false;
 
 export default function Home() {
-  const [me, setMe] = useState<null | { id: string; label: string }>(null)
-  const [loading, setLoading] = useState(true)
+  const [me, setMe] = useState<null | { id: string; label: string }>(null);
+  const [loading, setLoading] = useState(true);
 
-  // --- Auth & session ---
   useEffect(() => {
     const init = async () => {
-      const href = typeof window !== 'undefined' ? window.location.href : ''
-      if (href.includes('code=') && href.includes('state=')) {
-        await supabase.auth.exchangeCodeForSession(href).catch(() => {})
-        const url = new URL(window.location.href)
-        url.search = ''
-        window.history.replaceState({}, '', url.toString())
+      const href = typeof window !== "undefined" ? window.location.href : "";
+      if (href.includes("code=") && href.includes("state=")) {
+        await supabase.auth.exchangeCodeForSession(href).catch(() => {});
+        const url = new URL(window.location.href);
+        url.search = "";
+        window.history.replaceState({}, "", url.toString());
       }
 
-      const { data: { user } } = await supabase.auth.getUser()
-      setMe(
-        user
-          ? {
-              id: user.id,
-              label:
-                user.user_metadata?.full_name ||
-                user.user_metadata?.user_name ||
-                user.email ||
-                user.id,
-            }
-          : null
-      )
-      setLoading(false)
-    }
+      const { data } = await supabase.auth.getUser();
+      const u = data.user;
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-      const u = session?.user
       setMe(
         u
           ? {
@@ -51,53 +34,64 @@ export default function Home() {
                 u.id,
             }
           : null
-      )
-    })
+      );
+      setLoading(false);
+    };
 
-    init()
-    return () => sub.subscription.unsubscribe()
-  }, [])
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      const u = session?.user;
+      setMe(
+        u
+          ? {
+              id: u.id,
+              label:
+                u.user_metadata?.full_name ||
+                u.user_metadata?.user_name ||
+                u.email ||
+                u.id,
+            }
+          : null
+      );
+    });
 
-  // --- Connexion ---
+    init();
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
   const loginDiscord = async () => {
     await supabase.auth.signInWithOAuth({
-      provider: 'discord',
-      options: { redirectTo: window.location.origin + '/auth/callback' },
-    })
-  }
+      provider: "discord",
+      options: { redirectTo: window.location.origin + "/auth/callback" },
+    });
+  };
+
   const loginTwitch = async () => {
     await supabase.auth.signInWithOAuth({
-      provider: 'twitch',
-      options: { redirectTo: window.location.origin + '/auth/callback' },
-    })
-  }
+      provider: "twitch",
+      options: { redirectTo: window.location.origin + "/auth/callback" },
+    });
+  };
 
-  if (loading) return <p className="page-message">Chargement…</p>
+  if (loading) return <p className="page-message">Chargement…</p>;
 
   return (
     <div className="page">
       {!me ? (
         <div className="auth-buttons">
-          <button
-            onClick={loginDiscord}
-            className="btn btn-auth-discord"
-          >
+          <button onClick={loginDiscord} className="btn btn-auth-discord">
             Se connecter avec Discord
           </button>
-          <button
-            onClick={loginTwitch}
-            className="btn btn-auth-twitch"
-          >
+          <button onClick={loginTwitch} className="btn btn-auth-twitch">
             Se connecter avec Twitch
           </button>
           <p>Après connexion, tu seras redirigé ici.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 24, marginTop: 20 }}>
-          {SHOW_OWN_COLLECTION && <UserCollection userId={me.id} editable={true} />}
+        <div style={{ display: "grid", gap: 24 }}>
+          {SHOW_OWN_COLLECTION && <UserCollection userId={me.id} editable />}
           <CatalogGrid />
         </div>
       )}
     </div>
-  )
+  );
 }
