@@ -99,6 +99,11 @@ export default function CollectionsPage() {
       ).sort();
       setSets(uniqueSets);
 
+      // 👉 on force une extension par défaut
+      if (uniqueSets.length > 0) {
+        setSelectedSet((prev) => prev ?? uniqueSets[0]);
+      }
+
       const { data: offersData } = await supabase
         .from("trade_offers")
         .select("user_id, card_id");
@@ -288,7 +293,7 @@ export default function CollectionsPage() {
 
         {sets.length > 0 && (
           <select
-            value={selectedSet ?? ""}
+            value={selectedSet ?? (sets[0] ?? "")}
             onChange={(e) => setSelectedSet(e.target.value || null)}
             style={{
               maxWidth: 260,
@@ -297,7 +302,6 @@ export default function CollectionsPage() {
               border: "1px solid #ccc",
             }}
           >
-            <option value="">Toutes les extensions</option>
             {sets.map((s) => (
               <option key={s} value={s}>
                 {s}

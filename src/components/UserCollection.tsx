@@ -1,4 +1,4 @@
-'use client'
+"use client"
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
@@ -15,6 +15,7 @@ type CollectionRow = {
   // champs supplémentaires pour les filtres
   rarity_code: string | null
   colors: string | null
+  is_support: boolean | null
 }
 
 type SetTotalRow = {
@@ -147,6 +148,11 @@ export default function UserCollection({
         .sort((a, b) => a.name.localeCompare(b.name))
       setSetTotals(sets)
 
+      // 👉 on force une extension par défaut (plus de "Toutes les extensions")
+      if (sets.length > 0) {
+        setSelectedSet((prev) => prev ?? sets[0].name)
+      }
+
       setCompletion((completionRes.data || []) as UserCompletionRow[])
       setPinned((pinnedRes.data || []) as PinnedRow[])
 
@@ -169,9 +175,11 @@ export default function UserCollection({
       ).sort()
       setColors(cols)
 
+      // 🔹 Talents issus des non-supports uniquement
       const nms = Array.from(
         new Set(
           collRows
+            .filter((r) => !r.is_support)
             .map((r) => r.card_name)
             .filter((v): v is string => !!v)
         )
@@ -270,6 +278,7 @@ export default function UserCollection({
         const nms = Array.from(
           new Set(
             collRows
+              .filter((r) => !r.is_support)
               .map((r) => r.card_name)
               .filter((v): v is string => !!v)
           )
@@ -339,11 +348,10 @@ export default function UserCollection({
     collection[0]?.user_display_name || 'Utilisateur'
   )
 
-  // base filtrée par extension
-  const visibleBase =
-    selectedSet != null && selectedSet !== ''
-      ? collection.filter((r) => r.set_code === selectedSet)
-      : collection
+  // base filtrée par extension (toujours une extension sélectionnée)
+  const visibleBase = selectedSet
+    ? collection.filter((r) => r.set_code === selectedSet)
+    : collection
 
   // filtres supplémentaires
   const visibleFiltered = visibleBase
@@ -396,15 +404,7 @@ export default function UserCollection({
         <div>
           <h2 className="page-title">Ma collection — {ownerName}</h2>
           <div className="page-subtitle">
-            {selectedSet ? (
-              <>
-                Affichage : <strong>{selectedSet}</strong>
-              </>
-            ) : (
-              <>
-                Affichage : <strong>Toutes les extensions</strong>
-              </>
-            )}
+            Affichage : <strong>{selectedSet || '—'}</strong>
           </div>
         </div>
 
@@ -442,13 +442,12 @@ export default function UserCollection({
               </label>
               <select
                 className="rpg-select"
-                value={selectedSet ?? ''}
+                value={selectedSet ?? (setTotals[0]?.name ?? '')}
                 onChange={(e) => {
                   const v = e.target.value || null
                   setSelectedSet(v)
                 }}
               >
-                <option value="">Toutes les extensions</option>
                 {setTotals.map((s) => (
                   <option key={s.name} value={s.name}>
                     {s.name}

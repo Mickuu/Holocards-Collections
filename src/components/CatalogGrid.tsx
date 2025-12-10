@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -34,7 +35,7 @@ export default function CatalogGrid() {
   const [colors, setColors] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
-  // 🔹 nouveau filtre "Talents" (colonne name)
+  // 🔹 filtre "Talents" (colonne name, sans supports)
   const [names, setNames] = useState<string[]>([]);
   const [selectedName, setSelectedName] = useState<string | null>(null);
 
@@ -73,8 +74,10 @@ export default function CatalogGrid() {
       ).sort();
       setSets(uniqueSets);
 
-      // on laisse selectedSet = null par défaut → "Toutes les extensions"
-      setSelectedSet((prev) => (prev === undefined ? null : prev));
+      // 👉 on force une extension par défaut (plus de "Toutes les extensions")
+      if (uniqueSets.length > 0) {
+        setSelectedSet((prev) => prev ?? uniqueSets[0]);
+      }
 
       const uniqueRarities = Array.from(
         new Set(
@@ -90,9 +93,14 @@ export default function CatalogGrid() {
       ).sort();
       setColors(uniqueColors);
 
-      // 🔹 liste des talents (colonne name)
+      // 🔹 liste des talents (colonne name) SANS supports
       const uniqueNames = Array.from(
-        new Set(allCards.map((c) => c.name).filter((n): n is string => !!n))
+        new Set(
+          allCards
+            .filter((c) => !c.is_support)
+            .map((c) => c.name)
+            .filter((n): n is string => !!n)
+        )
       ).sort();
       setNames(uniqueNames);
 
@@ -164,7 +172,8 @@ export default function CatalogGrid() {
     .filter((c) => (selectedColor ? c.colors === selectedColor : true))
     .filter((c) => (selectedName ? c.name === selectedName : true));
 
-  const title = selectedSet ?? "Toutes les extensions";
+  const title =
+    selectedSet || (sets.length > 0 ? sets[0] : "Catalogue");
 
   return (
     <section>
@@ -188,13 +197,12 @@ export default function CatalogGrid() {
             flexWrap: "wrap",
           }}
         >
-          {/* 🔹 Filtre par set — avec "Toutes les extensions" comme sur Ma collection */}
+          {/* 🔹 Filtre par set — SANS "Toutes les extensions" */}
           {sets.length > 0 && (
             <select
-              value={selectedSet ?? ""}
+              value={selectedSet ?? (sets[0] ?? "")}
               onChange={(e) => setSelectedSet(e.target.value || null)}
             >
-              <option value="">Toutes les extensions</option>
               {sets.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -233,7 +241,7 @@ export default function CatalogGrid() {
             </select>
           )}
 
-          {/* 🔹 Nouveau filtre "Talents" (colonne name) */}
+          {/* 🔹 Filtre "Talents" (sans supports) */}
           {names.length > 0 && (
             <select
               value={selectedName ?? ""}
